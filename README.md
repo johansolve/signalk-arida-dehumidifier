@@ -4,6 +4,11 @@ Monitor and control an **Arida S3L WiFi** dehumidifier (a Tuya device) from Sign
 Control is **local** over the LAN via [tinytuya](https://github.com/jasonacox/tinytuya) —
 no Tuya cloud at runtime. Ships with a small control-panel webapp.
 
+> ⚠️ **One manual step `npm install` cannot do for you:** this plugin drives the device
+> through Python's `tinytuya`, which is **not** a Node dependency. You must create a Python
+> venv with `tinytuya` yourself (see [Requirements](#requirements)) — otherwise the plugin
+> loads but every poll fails, with the exact setup command shown in its status.
+
 ## What it exposes
 
 Under `environment.inside.dehumidifier.*` (configurable prefix):
@@ -24,11 +29,16 @@ the Signal K **access-request** flow (approve once under Security → Access Req
 
 ## Requirements
 
-- A Python interpreter with `tinytuya` installed. A dedicated venv is recommended:
+- **A Python interpreter with `tinytuya` installed.** `npm install` does not and cannot
+  install this — `tinytuya` is a Python package, not a Node one. Create a dedicated venv
+  (recommended; also sidesteps PEP 668 "externally-managed-environment" on Raspberry Pi OS
+  / Debian):
   ```
   python3 -m venv ~/arida-venv
   ~/arida-venv/bin/pip install tinytuya
   ```
+  Then point the plugin's **Python interpreter** setting at `~/arida-venv/bin/python`. If
+  it is missing the plugin shows a clear error in its status with the exact command to run.
 - The device's Tuya `deviceId`, LAN `ip` and `localKey` — see onboarding below.
 
 ## Getting the local key (one-time onboarding)
