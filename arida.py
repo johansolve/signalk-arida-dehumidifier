@@ -21,6 +21,10 @@ Usage:
 DP map (category cs), verified against the device:
     1 power(bool)  3 target humidity enum 40/50/60  4 fan (read-only, "HIGH")
     6 current humidity %  7 temperature °C  17 timer enum  19 fault bitmap
+
+DP 19 bit2 (E_Saving) is not a fault but the compressor-idle flag: set when the
+device rests because the humidity setpoint is satisfied, cleared while it dries.
+Verified live: idle -> 19==4, actively drying -> 19==0.
 """
 
 import json
@@ -45,6 +49,7 @@ DP_MAP = {
 }
 
 FAULT_BITS = ["TILTED", "CHECK", "E_Saving", "FULL"]
+ESAVING_MASK = 1 << FAULT_BITS.index("E_Saving")  # compressor-idle flag, not a fault
 HUMIDITY_VALUES = ("40", "50", "60")
 TIMER_VALUES = {"1h": "1h", "2h": "2h", "3h": "3h", "cancel": "CANCEL"}
 
@@ -77,15 +82,24 @@ def named(dps):
 
 
 def decode_fault(value):
+    value = (value or 0) & ~ESAVING_MASK  # E_Saving is an operating state, not a fault
     if not value:
         return "none"
     flags = [name for i, name in enumerate(FAULT_BITS) if value & (1 << i)]
     return ", ".join(flags) or f"raw {value}"
 
 
+def operating_state(power, fault_value):
+    if not power:
+        return "off"
+    return "idle" if (fault_value or 0) & ESAVING_MASK else "drying"
+
+
 def cmd_status(d):
     s = named(read(d))
-    print(f"Power:            {'ON' if s.get('power') else 'OFF'}")
+    power = bool(s.get("power"))
+    print(f"Power:            {'ON' if power else 'OFF'}")
+    print(f"State:            {operating_state(power, s.get('fault')).upper()}")
     print(f"Current humidity: {s.get('current_humidity')} %")
     print(f"Target humidity:  {s.get('target_humidity')} %")
     print(f"Temperature:      {s.get('temperature')} °C")
@@ -109,7 +123,9 @@ def cmd_scan():
 
 def cmd_json(d):
     s = named(read(d))
-    s["fault"] = decode_fault(s.get("fault"))
+    fault_val = s.get("fault")
+    s["resting"] = operating_state(bool(s.get("power")), fault_val) == "idle"
+    s["fault"] = decode_fault(fault_val)
     print(json.dumps(s))
 
 

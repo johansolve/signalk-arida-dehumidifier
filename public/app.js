@@ -71,6 +71,9 @@ function render(data) {
     const temp = data.temperature && data.temperature.value;
     const power = !!(data.power && data.power.value);
     const fault = (data.fault && data.fault.value) || 'none';
+    const state = (data.state && data.state.value) || (power ? 'drying' : 'off');
+    const drying = state === 'drying';
+    const idle = state === 'idle';
 
     el('humidity').textContent = rh != null ? Math.round(rh * 100) : '--';
     el('temp').textContent = temp != null ? (temp - 273.15).toFixed(1) : '--';
@@ -83,7 +86,7 @@ function render(data) {
 
     el('btn-power').classList.toggle('on', power);
     setLamp('lamp-run', power);
-    setLamp('lamp-running', power);
+    setLamp('lamp-running', drying);
     setLamp('lamp-wifi', true);
 
     setLamp('lamp-tank', fault.includes('FULL'));
@@ -93,8 +96,8 @@ function render(data) {
     const real = REAL_FAULTS.filter((f) => fault.includes(f));
     if (real.length) {
         setMessage('Fault: ' + real.join(', '), 'error');
-    } else if (fault.includes('E_Saving')) {
-        setMessage('Energy saving', 'info');
+    } else if (idle) {
+        setMessage('Idle — setpoint reached', 'info');
     } else if (!busy) {
         setMessage('');
     }
@@ -110,7 +113,9 @@ function applyOptimistic(subpath, value) {
     } else if (subpath === 'power') {
         el('btn-power').classList.toggle('on', !!value);
         setLamp('lamp-run', !!value);
-        setLamp('lamp-running', !!value);
+        if (!value) {
+            setLamp('lamp-running', false);
+        }
     }
 }
 
