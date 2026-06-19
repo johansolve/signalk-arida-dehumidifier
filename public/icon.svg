@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Arida dehumidifier">
+    <defs>
+        <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#36c98a"/>
+            <stop offset="1" stop-color="#2ee27a"/>
+        </linearGradient>
+    </defs>
+    <rect x="2" y="2" width="60" height="60" rx="14" fill="#22303a" stroke="#3c505d" stroke-width="1.5"/>
+    <path d="M32 13 C40 25 46 32 46 40 a14 14 0 1 1 -28 0 C18 32 24 25 32 13 Z" fill="url(#drop)"/>
+    <path d="M26 37 l6 6 l6 -6" fill="none" stroke="#1b2730" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

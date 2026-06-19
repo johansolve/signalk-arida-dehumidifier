@@ -1,0 +1,43 @@
+{
+  "name": "signalk-arida-dehumidifier",
+  "version": "0.1.0",
+  "description": "Monitor and control an Arida S3L WiFi (Tuya) dehumidifier from Signal K — humidity, temperature and setpoint as paths, with PUT control and a panel webapp. Local LAN control via tinytuya; no Tuya cloud at runtime.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"no tests yet\" && exit 0"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-webapp",
+    "signalk-category-utility",
+    "tuya",
+    "dehumidifier",
+    "humidity"
+  ],
+  "signalk-plugin-enabled-by-default": false,
+  "signalk": {
+    "displayName": "Arida S3L Dehumidifier",
+    "appIcon": "icon.svg"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "arida.py",
+    "public/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johansolve/signalk-arida-dehumidifier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/johansolve/signalk-arida-dehumidifier/issues"
+  },
+  "homepage": "https://github.com/johansolve/signalk-arida-dehumidifier#readme",
+  "author": "Johan Sölve (https://github.com/johansolve)",
+  "license": "MIT"
+}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Arida S3L</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="panel">
+        <header class="panel-top">
+            <span class="brand">
+                <img class="brand-icon" src="icon.svg" alt="">
+                ARIDA <span class="model">S3L</span>
+            </span>
+            <span class="top-right">
+                <span class="lamp wifi" id="lamp-wifi" title="WiFi"></span>
+                <a class="close" href="/admin/#/webapps" title="Back to Webapps" aria-label="Close">&times;</a>
+            </span>
+        </header>
+
+        <section class="readout">
+            <div class="humidity">
+                <span class="value" id="humidity">--</span>
+                <span class="unit">%RH</span>
+            </div>
+            <div class="temp">
+                <span class="value" id="temp">--</span>
+                <span class="unit">°C</span>
+            </div>
+        </section>
+
+        <section class="controls">
+            <button class="btn power" id="btn-power" type="button">
+                <span class="lamp run" id="lamp-run"></span>
+                <span class="btn-label">POWER</span>
+            </button>
+
+            <div class="target">
+                <span class="target-label">SET %RH</span>
+                <div class="target-buttons">
+                    <button class="btn target-btn" id="btn-40" type="button" data-target="40">
+                        <span class="lamp set" id="lamp-40"></span>
+                        <span class="target-pct">40</span>
+                        <span class="target-step">L</span>
+                    </button>
+                    <button class="btn target-btn" id="btn-50" type="button" data-target="50">
+                        <span class="lamp set" id="lamp-50"></span>
+                        <span class="target-pct">50</span>
+                        <span class="target-step">M</span>
+                    </button>
+                    <button class="btn target-btn" id="btn-60" type="button" data-target="60">
+                        <span class="lamp set" id="lamp-60"></span>
+                        <span class="target-pct">60</span>
+                        <span class="target-step">H</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <footer class="status">
+            <span class="indicator"><span class="lamp run" id="lamp-running"></span>RUNNING</span>
+            <span class="indicator"><span class="lamp warn" id="lamp-tank"></span>TANK FULL</span>
+            <span class="indicator"><span class="lamp fault" id="lamp-check"></span>CHECK</span>
+            <span class="indicator"><span class="lamp warn" id="lamp-tilt"></span>TILTED</span>
+        </footer>
+
+        <p class="msg" id="msg">Connecting…</p>
+
+        <div class="access" id="access" hidden>
+            <p class="access-title">Access required</p>
+            <p class="access-text" id="access-text"></p>
+            <button class="btn" id="access-btn" type="button">Request access</button>
+        </div>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
