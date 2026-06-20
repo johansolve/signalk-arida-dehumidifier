@@ -19,13 +19,16 @@ Under `environment.inside.dehumidifier.*` (configurable prefix):
 | `targetHumidity` | ratio | setpoint — **PUT** to change (40 / 50 / 60 %) |
 | `temperature` | K | device sensor (near the rotor outlet, not cabin ambient) |
 | `power` | bool | on/off — **PUT** to change |
-| `fan` | string | `LOW` / `HIGH` (read-only) |
+| `fan` | string | `LOW` / `HIGH` — **PUT** to change |
 | `timer` | string | `1h` / `2h` / `3h` / `CANCEL` |
 | `fault` | string | decoded bitmap: `TILTED`, `CHECK`, `E_Saving`, `FULL` |
 
 Webapp (standalone, in the Webapps menu): a control panel with live green lamps,
-power and humidity (40/50/60) buttons. Reads run open (`allow_readonly`); writes use
-the Signal K **access-request** flow (approve once under Security → Access Requests).
+power, humidity (40/50/60) and fan (LOW/HIGH) buttons, plus a history chart of drying
+runtime and humidity. Reads run open (`allow_readonly`); writes use the Signal K
+**access-request** flow (approve once under Security → Access Requests).
+
+![Control panel webapp](docs/screenshot.png)
 
 ## Requirements
 
