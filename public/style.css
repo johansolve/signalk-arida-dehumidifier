@@ -31,7 +31,7 @@ body {
     background: linear-gradient(160deg, var(--panel), #22303a);
     border: 1px solid var(--panel-edge);
     border-radius: 18px;
-    padding: 22px;
+    padding: 18px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
 }
 
@@ -65,21 +65,26 @@ body {
 }
 
 .close {
-    width: 26px;
-    height: 26px;
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 50%;
     color: var(--muted);
     font-size: 22px;
     line-height: 1;
     text-decoration: none;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
     transition: background 0.15s, color 0.15s;
 }
 
 .close:hover {
-    background: #33454f;
+    background: rgba(255,255,255,0.10);
     color: var(--text);
 }
 
@@ -91,11 +96,11 @@ body {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin: 22px 4px 10px;
+    margin: 12px 4px 6px;
 }
 
 .humidity .value {
-    font-size: 64px;
+    font-size: 52px;
     font-weight: 300;
     line-height: 1;
 }
@@ -119,7 +124,7 @@ body {
 .controls {
     display: flex;
     gap: 14px;
-    margin: 18px 0;
+    margin: 12px 0;
 }
 
 .btn {
@@ -145,13 +150,23 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 16px 0;
+    gap: 6px;
+    padding: 12px 0;
 }
 
 .btn-label {
     letter-spacing: 1px;
     font-weight: 600;
+}
+
+.power-state {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+}
+
+.power.on .power-state {
+    color: var(--accent);
 }
 
 .power.on {
@@ -221,12 +236,79 @@ body.busy .btn:not(.pending) {
     background: #2f4a44;
 }
 
+.fan {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.fan-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+
+.fan-buttons {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+}
+
+.fan-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 0;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.fan-btn.active {
+    border-color: var(--green);
+    background: #2f4a44;
+}
+
+.chart-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 4px 14px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.leg {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sw {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.sw-high {
+    background: #2ee27a;
+}
+
+.sw-low {
+    background: #176b42;
+}
+
 .status {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px 14px;
-    margin-top: 18px;
-    padding-top: 16px;
+    gap: 8px 14px;
+    margin-top: 12px;
+    padding-top: 12px;
     border-top: 1px solid var(--panel-edge);
     font-size: 12px;
     letter-spacing: 0.5px;
@@ -268,8 +350,11 @@ body.busy .btn:not(.pending) {
     text-align: center;
     font-size: 12px;
     color: var(--muted);
-    min-height: 16px;
-    margin: 14px 0 0;
+    margin: 0;
+}
+
+.msg:not(:empty) {
+    margin-top: 10px;
 }
 
 .msg.error {
@@ -278,6 +363,67 @@ body.busy .btn:not(.pending) {
 
 .msg.info {
     color: var(--accent);
+}
+
+.history {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--panel-edge);
+}
+
+.history-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.history-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--muted);
+}
+
+.ranges {
+    display: flex;
+    gap: 5px;
+}
+
+.ranges button {
+    background: #33454f;
+    border: 1px solid var(--panel-edge);
+    color: var(--muted);
+    border-radius: 7px;
+    padding: 5px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ranges button:hover {
+    background: #3c505d;
+}
+
+.ranges button.active {
+    background: #2f4a44;
+    border-color: var(--green);
+    color: var(--text);
+    font-weight: 600;
+}
+
+.chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 150px;
+}
+
+.history-status {
+    color: var(--muted);
+}
+
+.history-status.error {
+    color: var(--red);
 }
 
 .access {

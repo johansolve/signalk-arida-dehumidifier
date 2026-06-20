@@ -73,7 +73,6 @@ function render(data) {
     const fault = (data.fault && data.fault.value) || 'none';
     const state = (data.state && data.state.value) || (power ? 'drying' : 'off');
     const drying = state === 'drying';
-    const idle = state === 'idle';
 
     el('humidity').textContent = rh != null ? Math.round(rh * 100) : '--';
     el('temp').textContent = temp != null ? (temp - 273.15).toFixed(1) : '--';
@@ -84,7 +83,19 @@ function render(data) {
         setLamp('lamp-' + v, targetPct === v);
     });
 
+    const fan = (data.fan && data.fan.value) || null;
+    ['LOW', 'HIGH'].forEach((f) => {
+        const id = f.toLowerCase();
+        el('btn-fan-' + id).classList.toggle('active', fan === f);
+        setLamp('lamp-fan-' + id, fan === f);
+    });
+
     el('btn-power').classList.toggle('on', power);
+    // While a command is in flight the power-state line shows its feedback (…/✓),
+    // so only refresh it from live data when idle.
+    if (!busy) {
+        el('power-state').textContent = state.charAt(0).toUpperCase() + state.slice(1);
+    }
     setLamp('lamp-run', power);
     setLamp('lamp-running', drying);
     setLamp('lamp-wifi', true);
@@ -96,8 +107,6 @@ function render(data) {
     const real = REAL_FAULTS.filter((f) => fault.includes(f));
     if (real.length) {
         setMessage('Fault: ' + real.join(', '), 'error');
-    } else if (idle) {
-        setMessage('Idle — setpoint reached', 'info');
     } else if (!busy) {
         setMessage('');
     }
@@ -116,6 +125,12 @@ function applyOptimistic(subpath, value) {
         if (!value) {
             setLamp('lamp-running', false);
         }
+    } else if (subpath === 'fan') {
+        ['LOW', 'HIGH'].forEach((f) => {
+            const id = f.toLowerCase();
+            el('btn-fan-' + id).classList.toggle('active', f === value);
+            setLamp('lamp-fan-' + id, f === value);
+        });
     }
 }
 
@@ -159,7 +174,7 @@ async function put(subpath, value, btn) {
     }
     setBusy(true);
     btn.classList.add('pending');
-    setMessage('Sending…', 'info');
+    el('power-state').textContent = '…';
     try {
         const res = await fetch(DEHU + '/' + subpath, {
             method: 'PUT',
@@ -181,14 +196,13 @@ async function put(subpath, value, btn) {
             await waitForCompletion(body.href);
         }
         applyOptimistic(subpath, value);
-        setMessage('Confirmed ✓', 'info');
-        setTimeout(poll, 1500);
-        setTimeout(() => { if (!busy) { setMessage(''); } }, 1500);
+        el('power-state').textContent = '✓';
     } catch (e) {
         setMessage(e.message, 'error');
     } finally {
         btn.classList.remove('pending');
         setBusy(false);
+        setTimeout(poll, 1500);
     }
 }
 
@@ -255,7 +269,188 @@ document.querySelectorAll('.target-btn').forEach((btn) => {
     });
 });
 
+document.querySelectorAll('.fan-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        put('fan', btn.dataset.fan, btn);
+    });
+});
+
 el('access-btn').addEventListener('click', requestAccess);
+
+// ---- History chart ---------------------------------------------------------
+
+const HISTORY_URL = '/signalk/v1/api/arida-dehumidifier/history';
+const RANGES = [
+    { days: 1, label: '1d' },
+    { days: 2, label: '2d' },
+    { days: 5, label: '5d' },
+    { days: 7, label: '7d' },
+    { days: 14, label: '14d' }
+];
+const DEFAULT_DAYS = 1;
+const FAN_COLORS = { HIGH: '#2ee27a', LOW: '#176b42' };
+const NO_FAN_COLOR = '#45585f';
+const LINE_STYLE = {
+    relativeHumidity: { color: '#58a6ff', dash: [] },
+    targetHumidity: { color: '#f2b134', dash: [5, 4] }
+};
+
+const historyStatus = el('history-status');
+let chart = null;
+let historyDays = DEFAULT_DAYS;
+
+function setHistoryStatus(text, isError) {
+    historyStatus.textContent = text || '';
+    historyStatus.classList.toggle('error', !!isError);
+}
+
+function fmtTick(ms) {
+    const d = new Date(ms);
+    const pad = (n) => String(n).padStart(2, '0');
+    if (historyDays <= 2) {
+        return pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1);
+}
+
+function fmtFull(ms) {
+    const d = new Date(ms);
+    const pad = (n) => String(n).padStart(2, '0');
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + ' ' +
+        pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function buildChart() {
+    const ctx = el('chart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: { datasets: [] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            parsing: false,
+            interaction: { mode: 'nearest', intersect: false, axis: 'x' },
+            scales: {
+                x: {
+                    type: 'linear',
+                    ticks: {
+                        color: '#8aa0ad',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 7,
+                        callback: (v) => fmtTick(v)
+                    },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
+                },
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: { color: '#8aa0ad', font: { size: 10 }, callback: (v) => v + '%' },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e8eef1',
+                        usePointStyle: true,
+                        boxWidth: 8,
+                        font: { size: 11 },
+                        // Runtime bars are explained by the HTML fan-colour legend,
+                        // so keep only the humidity lines in the chart legend.
+                        filter: (item) => item.text !== 'Runtime'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => items.length ? fmtFull(items[0].parsed.x) : '',
+                        label: (item) => {
+                            if (item.parsed.y == null) {
+                                return item.dataset.label + ': –';
+                            }
+                            let s = item.dataset.label + ': ' + item.parsed.y.toFixed(0) + '%';
+                            const f = item.dataset.fanMode && item.dataset.fanMode[item.dataIndex];
+                            if (f) {
+                                s += ' (' + (f === 'HIGH' ? 'high' : 'low') + ' fan)';
+                            }
+                            return s;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function loadHistory(days) {
+    historyDays = days;
+    setHistoryStatus('Loading…', false);
+    document.querySelectorAll('#ranges button').forEach((b) => {
+        b.classList.toggle('active', Number(b.dataset.days) === days);
+    });
+    try {
+        const r = await fetch(HISTORY_URL + '?days=' + days, {
+            cache: 'no-store',
+            credentials: 'include'
+        });
+        if (!r.ok) {
+            let m = 'HTTP ' + r.status;
+            try { const j = await r.json(); if (j.error) { m = j.error; } } catch (e) {}
+            throw new Error(m);
+        }
+        const data = await r.json();
+        chart.data.datasets = data.series.map((s) => {
+            if (s.key === 'runtime') {
+                const fanMode = (s.fan || []).map(([, f]) => f);
+                return {
+                    type: 'bar',
+                    label: s.label,
+                    data: s.points.map(([t, v]) => ({ x: t, y: v })),
+                    fanMode: fanMode,
+                    backgroundColor: fanMode.map((f) => f ? FAN_COLORS[f] : NO_FAN_COLOR),
+                    borderWidth: 0,
+                    order: 2
+                };
+            }
+            const style = LINE_STYLE[s.key] || { color: '#8aa0ad', dash: [] };
+            return {
+                type: 'line',
+                label: s.label,
+                data: s.points.map(([t, v]) => ({ x: t, y: v })),
+                borderColor: style.color,
+                backgroundColor: style.color,
+                borderDash: style.dash,
+                borderWidth: 1.8,
+                pointRadius: 0,
+                tension: 0.2,
+                fill: false,
+                spanGaps: false,
+                order: 1
+            };
+        });
+        chart.update();
+        const total = chart.data.datasets.reduce((n, d) => n + d.data.filter((p) => p.y != null).length, 0);
+        const rm = data.runtimeMinutes;
+        const per = rm >= 60 ? (rm / 60) + ' h' : rm + ' min';
+        setHistoryStatus(total === 0 ? 'No data in range.' : 'Runtime per ' + per, false);
+    } catch (e) {
+        setHistoryStatus('Error: ' + e.message, true);
+    }
+}
+
+RANGES.forEach((r) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = r.label;
+    b.dataset.days = r.days;
+    b.addEventListener('click', () => loadHistory(r.days));
+    el('ranges').appendChild(b);
+});
+
+buildChart();
+loadHistory(DEFAULT_DAYS);
 
 poll();
 setInterval(poll, POLL_MS);

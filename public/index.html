@@ -16,7 +16,7 @@
             </span>
             <span class="top-right">
                 <span class="lamp wifi" id="lamp-wifi" title="WiFi"></span>
-                <a class="close" href="/admin/#/webapps" title="Back to Webapps" aria-label="Close">&times;</a>
+                <a class="close" href="/admin/#/webapps" title="Back to Webapps" aria-label="Close">✕</a>
             </span>
         </header>
 
@@ -35,6 +35,7 @@
             <button class="btn power" id="btn-power" type="button">
                 <span class="lamp run" id="lamp-run"></span>
                 <span class="btn-label">POWER</span>
+                <span class="power-state" id="power-state">--</span>
             </button>
 
             <div class="target">
@@ -59,6 +60,18 @@
             </div>
         </section>
 
+        <section class="fan">
+            <span class="fan-label">FAN</span>
+            <div class="fan-buttons">
+                <button class="btn fan-btn" id="btn-fan-low" type="button" data-fan="LOW">
+                    <span class="lamp set" id="lamp-fan-low"></span>LOW
+                </button>
+                <button class="btn fan-btn" id="btn-fan-high" type="button" data-fan="HIGH">
+                    <span class="lamp set" id="lamp-fan-high"></span>HIGH
+                </button>
+            </div>
+        </section>
+
         <footer class="status">
             <span class="indicator"><span class="lamp run" id="lamp-running"></span>RUNNING</span>
             <span class="indicator"><span class="lamp warn" id="lamp-tank"></span>TANK FULL</span>
@@ -68,12 +81,26 @@
 
         <p class="msg" id="msg">Connecting…</p>
 
+        <section class="history">
+            <div class="history-head">
+                <span class="history-title">HISTORY</span>
+                <div class="ranges" id="ranges"></div>
+            </div>
+            <div class="chart-wrap"><canvas id="chart"></canvas></div>
+            <div class="chart-foot">
+                <span class="history-status" id="history-status">Loading…</span>
+                <span class="leg"><i class="sw sw-high"></i>high fan</span>
+                <span class="leg"><i class="sw sw-low"></i>low fan</span>
+            </div>
+        </section>
+
         <div class="access" id="access" hidden>
             <p class="access-title">Access required</p>
             <p class="access-text" id="access-text"></p>
             <button class="btn" id="access-btn" type="button">Request access</button>
         </div>
     </main>
-    <script src="app.js"></script>
+    <script src="vendor/chart.umd.js"></script>
+    <script src="app.js?v=20260620g"></script>
 </body>
 </html>

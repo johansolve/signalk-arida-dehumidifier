@@ -15,11 +15,12 @@ Usage:
     ./arida.py scan              # discover the device IP on the LAN (UDP broadcast)
     ./arida.py on | off
     ./arida.py humidity 40|50|60 # target humidity (enum: 40=L, 50=M, 60=H)
+    ./arida.py fan low|high      # fan speed (enum "LOW" / "HIGH")
     ./arida.py timer 1h|2h|3h|cancel
     ./arida.py set <dp> <value>  # escape hatch for probing undocumented DPs
 
 DP map (category cs), verified against the device:
-    1 power(bool)  3 target humidity enum 40/50/60  4 fan (read-only, "HIGH")
+    1 power(bool)  3 target humidity enum 40/50/60  4 fan enum "LOW"/"HIGH"
     6 current humidity %  7 temperature °C  17 timer enum  19 fault bitmap
 
 DP 19 bit2 (E_Saving) is not a fault but the compressor-idle flag: set when the
@@ -41,7 +42,7 @@ VERSION = float(os.environ.get("ARIDA_VERSION", "3.4"))
 DP_MAP = {
     "1": "power",
     "3": "target_humidity",   # enum "40" / "50" / "60"
-    "4": "fan",               # live value "HIGH"; not in cloud mapping, read-only here
+    "4": "fan",               # enum "LOW" / "HIGH" (writable; not in cloud mapping)
     "6": "current_humidity",
     "7": "temperature",
     "17": "timer",            # enum "1h" / "2h" / "3h" / "CANCEL"
@@ -51,6 +52,7 @@ DP_MAP = {
 FAULT_BITS = ["TILTED", "CHECK", "E_Saving", "FULL"]
 ESAVING_MASK = 1 << FAULT_BITS.index("E_Saving")  # compressor-idle flag, not a fault
 HUMIDITY_VALUES = ("40", "50", "60")
+FAN_VALUES = {"low": "LOW", "high": "HIGH"}
 TIMER_VALUES = {"1h": "1h", "2h": "2h", "3h": "3h", "cancel": "CANCEL"}
 
 
@@ -135,6 +137,13 @@ def cmd_humidity(d, value):
     print(d.set_value("3", value))
 
 
+def cmd_fan(d, value):
+    key = (value or "").lower()
+    if key not in FAN_VALUES:
+        raise SystemExit(f"fan must be one of {list(FAN_VALUES)}")
+    print(d.set_value("4", FAN_VALUES[key]))
+
+
 def cmd_timer(d, value):
     if value not in TIMER_VALUES:
         raise SystemExit(f"timer must be one of {list(TIMER_VALUES)}")
@@ -170,6 +179,8 @@ def main():
         print(d.set_value("1", False))
     elif cmd == "humidity":
         cmd_humidity(d, args[1])
+    elif cmd == "fan":
+        cmd_fan(d, args[1])
     elif cmd == "timer":
         cmd_timer(d, args[1])
     elif cmd == "set":
