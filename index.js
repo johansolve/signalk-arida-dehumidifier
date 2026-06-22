@@ -142,7 +142,14 @@ module.exports = function (app) {
         const runMin = groupMinutes(days, RUNTIME_POINTS)
         const humWin =
             `WHERE time > now() - ${days}d GROUP BY time(${humMin}m) fill(none)`
-        const runGroup = `GROUP BY time(${runMin}m) fill(0)`
+        // InfluxDB aligns time() buckets to the epoch (i.e. whole clock hours), so
+        // the newest bucket only holds the minutes elapsed since the top of the
+        // hour yet still draws as a full bar — a misleading partial. Offset the
+        // buckets so a boundary lands exactly on now, making each runtime bar a
+        // complete window measured back from now (the oldest bar takes the
+        // partial instead, off at the edge of the range).
+        const runOffsetMs = Date.now() % (runMin * 60 * 1000)
+        const runGroup = `GROUP BY time(${runMin}m, ${runOffsetMs}ms) fill(0)`
         // Runtime is the duty-cycle of the drying state: the share of samples in
         // each bucket where state='drying'. state is stored as a string, so we
         // count matching samples and divide by the total (polling is even, so

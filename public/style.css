@@ -346,6 +346,31 @@ body.busy .btn:not(.pending) {
     box-shadow: 0 0 8px 1px rgba(232, 80, 58, 0.8);
 }
 
+/* No contact with the device: the WiFi lamp goes red and blinks, and the rest
+   of the panel dims so the last-known (now stale) readings don't read as live. */
+.lamp.wifi.stale {
+    background: var(--red);
+    box-shadow: 0 0 8px 1px rgba(232, 80, 58, 0.8);
+    animation: lamp-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes lamp-blink {
+    50% { opacity: 0.3; }
+}
+
+body.stale .readout,
+body.stale .controls,
+body.stale .fan,
+body.stale .status {
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+body.stale .btn {
+    pointer-events: none;
+    cursor: default;
+}
+
 .msg {
     text-align: center;
     font-size: 12px;

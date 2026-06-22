@@ -5,6 +5,11 @@ const ACCESS_URL = '/signalk/v1/access/requests';
 const TOKEN_KEY = 'arida-sk-token';
 const CLIENT_KEY = 'arida-client-id';
 const POLL_MS = 4000;
+// SignalK keeps the last known value in its data model even after the device
+// stops responding, so a 200 from the API does not mean we have contact. Treat
+// the data as stale once it is older than this (plugin polls every ~30 s, so 3
+// missed cycles); a stale reading must not look like a healthy live one.
+const STALE_MS = 90000;
 const REAL_FAULTS = ['TILTED', 'CHECK', 'FULL'];
 
 const el = (id) => document.getElementById(id);
@@ -44,6 +49,39 @@ function setLamp(id, on) {
     el(id).classList.toggle('on', !!on);
 }
 
+// Newest timestamp across the leaf values, in ms (0 if none). The device pushes
+// power/state on every successful poll, so this only advances while we actually
+// have contact.
+function newestTimestamp(data) {
+    let newest = 0;
+    Object.keys(data).forEach((k) => {
+        const node = data[k];
+        const ms = node && node.timestamp ? Date.parse(node.timestamp) : 0;
+        if (ms > newest) {
+            newest = ms;
+        }
+    });
+    return newest;
+}
+
+function fmtAge(ms) {
+    const s = Math.round(ms / 1000);
+    if (s < 90) {
+        return s + ' s';
+    }
+    const m = Math.round(s / 60);
+    return m < 90 ? m + ' min' : Math.round(m / 60) + ' h';
+}
+
+function setOffline(detail) {
+    clearLive();
+    const wifi = el('lamp-wifi');
+    wifi.classList.remove('on');
+    wifi.classList.add('stale');
+    document.body.classList.add('stale');
+    setMessage(detail, 'error');
+}
+
 function setMessage(text, kind) {
     msg.textContent = text || '';
     msg.classList.toggle('error', kind === 'error');
@@ -65,7 +103,36 @@ function hideAccess() {
     el('access').hidden = true;
 }
 
+// No contact with the unit: nothing on screen reflects the real device, so wipe
+// every live indicator. No lamp, no active button, no readout may suggest a
+// working state. setOffline() also disables the buttons via body.stale.
+function clearLive() {
+    el('humidity').textContent = '--';
+    el('temp').textContent = '--';
+    [40, 50, 60].forEach((v) => {
+        el('btn-' + v).classList.remove('active');
+        setLamp('lamp-' + v, false);
+    });
+    ['low', 'high'].forEach((id) => {
+        el('btn-fan-' + id).classList.remove('active');
+        setLamp('lamp-fan-' + id, false);
+    });
+    el('btn-power').classList.remove('on');
+    el('power-state').textContent = '--';
+    ['lamp-run', 'lamp-running', 'lamp-tank', 'lamp-check', 'lamp-tilt'].forEach((id) => setLamp(id, false));
+}
+
 function render(data) {
+    const newest = newestTimestamp(data);
+    if (!newest || (Date.now() - newest) > STALE_MS) {
+        setOffline('Offline — no contact with the unit' +
+            (newest ? ' (last data ' + fmtAge(Date.now() - newest) + ' ago)' : ''));
+        return;
+    }
+    el('lamp-wifi').classList.remove('stale');
+    el('lamp-wifi').classList.add('on');
+    document.body.classList.remove('stale');
+
     const rh = data.relativeHumidity && data.relativeHumidity.value;
     const target = data.targetHumidity && data.targetHumidity.value;
     const temp = data.temperature && data.temperature.value;
@@ -98,7 +165,6 @@ function render(data) {
     }
     setLamp('lamp-run', power);
     setLamp('lamp-running', drying);
-    setLamp('lamp-wifi', true);
 
     setLamp('lamp-tank', fault.includes('FULL'));
     setLamp('lamp-check', fault.includes('CHECK'));
@@ -142,8 +208,7 @@ async function poll() {
         }
         render(await res.json());
     } catch (e) {
-        setLamp('lamp-wifi', false);
-        setMessage('No data (' + e.message + ')', 'error');
+        setOffline('No data (' + e.message + ')');
     }
 }
 
