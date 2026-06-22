@@ -1,7 +1,7 @@
 {
   "name": "signalk-arida-dehumidifier",
   "version": "0.1.0",
-  "description": "Monitor and control an Arida S3L WiFi (Tuya) dehumidifier from Signal K — humidity, temperature and setpoint as paths, with PUT control and a panel webapp. Local LAN control via tinytuya; no Tuya cloud at runtime.",
+  "description": "Monitor and control an Arida S3L (Tuya) dehumidifier from Signal K over the local LAN — paths, PUT control and a webapp.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"no tests yet\" && exit 0"
