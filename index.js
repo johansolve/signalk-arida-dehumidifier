@@ -140,8 +140,12 @@ module.exports = function (app) {
     async function queryHistory(days) {
         const humMin = groupMinutes(days, TARGET_POINTS)
         const runMin = groupMinutes(days, RUNTIME_POINTS)
+        // fill(null) (not fill(none)) so empty buckets come back as explicit null
+        // points rather than being dropped — the chart breaks the line across them
+        // (spanGaps: false) instead of connecting distant points across an offline
+        // gap with a straight line.
         const humWin =
-            `WHERE time > now() - ${days}d GROUP BY time(${humMin}m) fill(none)`
+            `WHERE time > now() - ${days}d GROUP BY time(${humMin}m) fill(null)`
         // InfluxDB aligns time() buckets to the epoch (i.e. whole clock hours), so
         // the newest bucket only holds the minutes elapsed since the top of the
         // hour yet still draws as a full bar — a misleading partial. Offset the
